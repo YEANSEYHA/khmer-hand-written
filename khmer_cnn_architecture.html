@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KhmerDigitCNN — Architecture Diagram</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Outfit:wght@300;400;600;800&display=swap');
+
+:root {
+  --bg: #07090f;
+  --panel: #0d1117;
+  --border: #1c2333;
+  --text: #cdd9e5;
+  --muted: #546278;
+
+  --input:   #38bdf8;
+  --conv:    #818cf8;
+  --bn:      #34d399;
+  --relu:    #fbbf24;
+  --pool:    #60a5fa;
+  --drop2d:  #f472b6;
+  --drop:    #fb923c;
+  --flat:    #a78bfa;
+  --linear:  #4ade80;
+  --output:  #f87171;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Outfit', sans-serif;
+  min-height: 100vh;
+  padding: 32px 24px 60px;
+}
+
+/* ── HEADER ── */
+.header {
+  text-align: center;
+  margin-bottom: 44px;
+}
+.header h1 {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -1px;
+  background: linear-gradient(135deg, var(--conv), var(--input));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.header p {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--muted);
+  margin-top: 6px;
+  letter-spacing: 1px;
+}
+
+/* ── FLOW: vertical stack ── */
+.flow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+/* Section group */
+.section {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px 20px 14px;
+  position: relative;
+  background: var(--panel);
+  margin-bottom: 0;
+  animation: fadeUp 0.5s ease both;
+}
+.section-tag {
+  position: absolute;
+  top: -11px;
+  left: 20px;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 2px 10px;
+  border-radius: 20px;
+}
+.features-tag { background: #1e1b4b; color: var(--conv); border: 1px solid #312e81; }
+.classifier-tag { background: #052e16; color: var(--linear); border: 1px solid #14532d; }
+
+/* Block row inside a section */
+.block-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 6px;
+}
+.block-row:last-child { margin-bottom: 0; }
+
+/* Block label column */
+.block-num {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.58rem;
+  color: var(--muted);
+  border-right: 1px dashed var(--border);
+  padding-right: 8px;
+}
+
+/* Layer pills row */
+.layers-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: 1;
+}
+
+/* Individual layer pill */
+.layer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border-radius: 10px;
+  border: 1px solid;
+  padding: 7px 12px 6px;
+  cursor: default;
+  transition: transform 0.15s, box-shadow 0.15s;
+  position: relative;
+  min-width: 72px;
+}
+.layer:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+}
+.layer-icon {
+  font-size: 1.1rem;
+  margin-bottom: 3px;
+  line-height: 1;
+}
+.layer-name {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+.layer-detail {
+  font-size: 0.6rem;
+  margin-top: 2px;
+  opacity: 0.75;
+  white-space: nowrap;
+}
+
+/* Shape badge between blocks */
+.shape-flow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 4px 0;
+}
+.shape-arrow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.shape-line {
+  width: 1px;
+  height: 16px;
+  background: var(--muted);
+}
+.shape-tri {
+  width: 0; height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 7px solid var(--muted);
+}
+.shape-badge {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.62rem;
+  padding: 3px 12px;
+  border-radius: 20px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+/* Connector between sections */
+.section-connector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  padding: 6px 0;
+}
+.conn-line {
+  width: 2px;
+  height: 20px;
+  background: linear-gradient(to bottom, var(--conv), var(--linear));
+}
+.conn-arrow {
+  width: 0; height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 9px solid var(--linear);
+}
+.conn-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.58rem;
+  color: var(--muted);
+  margin-top: 3px;
+}
+
+/* Layer color themes */
+.l-input  { border-color: #0369a1; background: #082f4933; color: var(--input); }
+.l-conv   { border-color: #4338ca; background: #1e1b4b33; color: var(--conv); }
+.l-bn     { border-color: #059669; background: #06422533; color: var(--bn); }
+.l-relu   { border-color: #b45309; background: #45270933; color: var(--relu); }
+.l-pool   { border-color: #1d4ed8; background: #1e3a8a33; color: var(--pool); }
+.l-drop2d { border-color: #be185d; background: #4c004433; color: var(--drop2d); }
+.l-drop   { border-color: #c2410c; background: #431c0d33; color: var(--drop); }
+.l-flat   { border-color: #6d28d9; background: #2e1b4e33; color: var(--flat); }
+.l-linear { border-color: #15803d; background: #052e1633; color: var(--linear); }
+.l-output { border-color: #b91c1c; background: #450a0a33; color: var(--output); }
+
+/* Shape badge colors */
+.sb-blue  { background: #082f49; color: var(--input); border: 1px solid #0369a1; }
+.sb-indigo{ background: #1e1b4b; color: var(--conv); border: 1px solid #4338ca; }
+.sb-green { background: #052e16; color: var(--linear); border: 1px solid #15803d; }
+.sb-red   { background: #450a0a; color: var(--output); border: 1px solid #b91c1c; }
+
+/* Legend */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin: 30px auto 0;
+  max-width: 860px;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.58rem;
+  color: var(--muted);
+}
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+/* Summary table */
+.summary {
+  margin: 36px auto 0;
+  max-width: 860px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.summary-title {
+  padding: 12px 20px;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+}
+table { width: 100%; border-collapse: collapse; }
+th {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.58rem;
+  color: var(--muted);
+  text-align: left;
+  padding: 9px 16px;
+  border-bottom: 1px solid var(--border);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+td {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.62rem;
+  padding: 8px 16px;
+  border-bottom: 1px solid #1c233388;
+  color: var(--text);
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #ffffff05; }
+.td-out { color: var(--input); }
+.td-params { color: var(--linear); text-align: right; }
+.td-role { color: var(--muted); font-size: 0.57rem; }
+.td-block { color: var(--conv); }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.section:nth-child(1) { animation-delay: 0.05s; }
+.section:nth-child(2) { animation-delay: 0.15s; }
+.section:nth-child(3) { animation-delay: 0.25s; }
+
+/* Tooltip */
+.layer[data-tip]:hover::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1c2333;
+  color: var(--text);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.66rem;
+  padding: 6px 10px;
+  border-radius: 7px;
+  white-space: nowrap;
+  border: 1px solid var(--border);
+  z-index: 10;
+  pointer-events: none;
+  box-shadow: 0 4px 16px #000a;
+}
+
+.divider {
+  width: 100%;
+  border: none;
+  border-top: 1px dashed var(--border);
+  margin: 10px 0;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>KhmerDigitCNN</h1>
+  <p>INPUT 1×128×128 &nbsp;▸&nbsp; 3 CONV BLOCKS &nbsp;▸&nbsp; 2 LINEAR LAYERS &nbsp;▸&nbsp; 10 CLASSES</p>
+</div>
+
+<div class="flow">
+
+  <!-- INPUT -->
+  <div class="shape-flow">
+    <div class="shape-badge sb-blue">Input &nbsp;1 × 128 × 128</div>
+  </div>
+  <div class="shape-arrow" style="padding:2px 0">
+    <div class="shape-line"></div>
+    <div class="shape-tri"></div>
+  </div>
+
+  <!-- ══ FEATURES ══ -->
+  <div class="section" style="animation-delay:0.05s">
+    <div class="section-tag features-tag">self.features — Convolutional Feature Extractor</div>
+
+    <!-- Block 1 -->
+    <div class="block-row">
+      <div class="block-num">B1</div>
+      <div class="layers-row">
+        <div class="layer l-conv"  data-tip="Learns 32 filters of 3×3, preserves spatial size via padding=1">
+          <div class="layer-icon">🔲</div>
+          <div class="layer-name">Conv2d</div>
+          <div class="layer-detail">1→32, k=3, p=1</div>
+        </div>
+        <div class="layer l-bn"   data-tip="Normalises each of the 32 channels → faster, stable training">
+          <div class="layer-icon">⚖️</div>
+          <div class="layer-name">BatchNorm2d</div>
+          <div class="layer-detail">32 channels</div>
+        </div>
+        <div class="layer l-relu" data-tip="Kills negative activations — introduces non-linearity">
+          <div class="layer-icon">⚡</div>
+          <div class="layer-name">ReLU</div>
+          <div class="layer-detail">max(0, x)</div>
+        </div>
+        <div class="layer l-pool" data-tip="2×2 window keeps max value → 128→64 spatial">
+          <div class="layer-icon">⬇️</div>
+          <div class="layer-name">MaxPool2d</div>
+          <div class="layer-detail">÷2 → 64×64</div>
+        </div>
+        <div class="layer l-drop2d" data-tip="Zeros entire channels randomly during training — spatial regularisation">
+          <div class="layer-icon">💧</div>
+          <div class="layer-name">Dropout2d</div>
+          <div class="layer-detail">p = 0.1</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="shape-flow">
+      <div class="shape-arrow"><div class="shape-line"></div><div class="shape-tri"></div></div>
+      <div class="shape-badge sb-indigo">32 × 64 × 64</div>
+    </div>
+    <hr class="divider">
+
+    <!-- Block 2 -->
+    <div class="block-row">
+      <div class="block-num">B2</div>
+      <div class="layers-row">
+        <div class="layer l-conv"  data-tip="64 filters — captures more complex shapes & textures">
+          <div class="layer-icon">🔲</div>
+          <div class="layer-name">Conv2d</div>
+          <div class="layer-detail">32→64, k=3, p=1</div>
+        </div>
+        <div class="layer l-bn"   data-tip="Normalises 64 channels">
+          <div class="layer-icon">⚖️</div>
+          <div class="layer-name">BatchNorm2d</div>
+          <div class="layer-detail">64 channels</div>
+        </div>
+        <div class="layer l-relu" data-tip="Kills negative activations">
+          <div class="layer-icon">⚡</div>
+          <div class="layer-name">ReLU</div>
+          <div class="layer-detail">max(0, x)</div>
+        </div>
+        <div class="layer l-pool" data-tip="64→32 spatial reduction">
+          <div class="layer-icon">⬇️</div>
+          <div class="layer-name">MaxPool2d</div>
+          <div class="layer-detail">÷2 → 32×32</div>
+        </div>
+        <div class="layer l-drop2d" data-tip="Slightly more aggressive — deeper features more redundant">
+          <div class="layer-icon">💧</div>
+          <div class="layer-name">Dropout2d</div>
+          <div class="layer-detail">p = 0.2</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="shape-flow">
+      <div class="shape-arrow"><div class="shape-line"></div><div class="shape-tri"></div></div>
+      <div class="shape-badge sb-indigo">64 × 32 × 32</div>
+    </div>
+    <hr class="divider">
+
+    <!-- Block 3 -->
+    <div class="block-row">
+      <div class="block-num">B3</div>
+      <div class="layers-row">
+        <div class="layer l-conv"  data-tip="128 filters — high-level semantic features (digit structure)">
+          <div class="layer-icon">🔲</div>
+          <div class="layer-name">Conv2d</div>
+          <div class="layer-detail">64→128, k=3, p=1</div>
+        </div>
+        <div class="layer l-bn"   data-tip="Normalises 128 channels">
+          <div class="layer-icon">⚖️</div>
+          <div class="layer-name">BatchNorm2d</div>
+          <div class="layer-detail">128 channels</div>
+        </div>
+        <div class="layer l-relu" data-tip="Kills negative activations">
+          <div class="layer-icon">⚡</div>
+          <div class="layer-name">ReLU</div>
+          <div class="layer-detail">max(0, x)</div>
+        </div>
+        <div class="layer l-pool" data-tip="32→16 final spatial reduction">
+          <div class="layer-icon">⬇️</div>
+          <div class="layer-name">MaxPool2d</div>
+          <div class="layer-detail">÷2 → 16×16</div>
+        </div>
+        <div class="layer l-drop2d" data-tip="Strongest dropout — complex features are highly redundant here">
+          <div class="layer-icon">💧</div>
+          <div class="layer-name">Dropout2d</div>
+          <div class="layer-detail">p = 0.3</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="shape-flow">
+      <div class="shape-arrow"><div class="shape-line"></div><div class="shape-tri"></div></div>
+      <div class="shape-badge sb-indigo">128 × 16 × 16 = <strong style="color:#f0f0f0">&nbsp;32,768 values</strong></div>
+    </div>
+
+  </div><!-- /features -->
+
+  <!-- Section connector -->
+  <div class="section-connector">
+    <div class="conn-line"></div>
+    <div class="conn-arrow"></div>
+    <div class="conn-label">Flatten: 128×16×16 → 32,768</div>
+  </div>
+
+  <!-- ══ CLASSIFIER ══ -->
+  <div class="section" style="animation-delay:0.2s">
+    <div class="section-tag classifier-tag">self.classifier — Classification Head</div>
+
+    <div class="block-row">
+      <div class="block-num">C1</div>
+      <div class="layers-row">
+        <div class="layer l-flat"   data-tip="Reshapes 128×16×16 tensor → single 32,768-length vector">
+          <div class="layer-icon">📐</div>
+          <div class="layer-name">Flatten</div>
+          <div class="layer-detail">→ 32,768</div>
+        </div>
+        <div class="layer l-drop"   data-tip="Aggressive 40% dropout on flattened vector before first linear">
+          <div class="layer-icon">💧</div>
+          <div class="layer-name">Dropout</div>
+          <div class="layer-detail">p = 0.4</div>
+        </div>
+        <div class="layer l-linear" data-tip="8,388,608 weights compress features from 32,768→256 neurons">
+          <div class="layer-icon">🔗</div>
+          <div class="layer-name">Linear</div>
+          <div class="layer-detail">32768→256</div>
+        </div>
+        <div class="layer l-relu"   data-tip="Adds non-linearity to the compressed representation">
+          <div class="layer-icon">⚡</div>
+          <div class="layer-name">ReLU</div>
+          <div class="layer-detail">max(0, x)</div>
+        </div>
+        <div class="layer l-drop"   data-tip="30% dropout before final classification layer">
+          <div class="layer-icon">💧</div>
+          <div class="layer-name">Dropout</div>
+          <div class="layer-detail">p = 0.3</div>
+        </div>
+        <div class="layer l-output" data-tip="10 raw logit scores — one per Khmer digit (0–9)">
+          <div class="layer-icon">🎯</div>
+          <div class="layer-name">Linear</div>
+          <div class="layer-detail">256→10</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="shape-flow">
+      <div class="shape-arrow"><div class="shape-line"></div><div class="shape-tri"></div></div>
+      <div class="shape-badge sb-red">Output — 10 raw logits (one per digit class)</div>
+    </div>
+
+  </div><!-- /classifier -->
+
+</div><!-- /flow -->
+
+<!-- LEGEND -->
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:var(--conv)"></div>Conv2d — feature learning</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--bn)"></div>BatchNorm — stabilise training</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--relu)"></div>ReLU — non-linearity</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--pool)"></div>MaxPool — spatial compression</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--drop2d)"></div>Dropout2d — channel regularisation</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--drop)"></div>Dropout — scalar regularisation</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--linear)"></div>Linear — global classification</div>
+</div>
+
+<!-- SUMMARY TABLE -->
+<div class="summary">
+  <div class="summary-title">Layer-by-layer shape & parameter count</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Block</th>
+        <th>Layer</th>
+        <th>Output Shape</th>
+        <th>Params</th>
+        <th>Role</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="td-block">—</td>
+        <td>Input</td>
+        <td class="td-out">1 × 128 × 128</td>
+        <td class="td-params">—</td>
+        <td class="td-role">Grayscale digit image</td>
+      </tr>
+      <tr>
+        <td class="td-block" rowspan="5">Block 1</td>
+        <td>Conv2d(1→32, k=3, p=1)</td>
+        <td class="td-out">32 × 128 × 128</td>
+        <td class="td-params">320</td>
+        <td class="td-role">Edge / stroke detection</td>
+      </tr>
+      <tr>
+        <td>BatchNorm2d(32)</td>
+        <td class="td-out">32 × 128 × 128</td>
+        <td class="td-params">64</td>
+        <td class="td-role">Channel normalisation</td>
+      </tr>
+      <tr>
+        <td>ReLU</td>
+        <td class="td-out">32 × 128 × 128</td>
+        <td class="td-params">0</td>
+        <td class="td-role">Non-linearity</td>
+      </tr>
+      <tr>
+        <td>MaxPool2d(2)</td>
+        <td class="td-out">32 × 64 × 64</td>
+        <td class="td-params">0</td>
+        <td class="td-role">Spatial ÷2</td>
+      </tr>
+      <tr>
+        <td>Dropout2d(0.1)</td>
+        <td class="td-out">32 × 64 × 64</td>
+        <td class="td-params">0</td>
+        <td class="td-role">Drop 10% channels</td>
+      </tr>
+      <tr>
+        <td class="td-block" rowspan="5">Block 2</td>
+        <td>Conv2d(32→64, k=3, p=1)</td>
+        <td class="td-out">64 × 64 × 64</td>
+        <td class="td-params">18,496</td>
+        <td class="td-role">Shape / curve detection</td>
+      </tr>
+      <tr>
+        <td>BatchNorm2d(64)</td>
+        <td class="td-out">64 × 64 × 64</td>
+        <td class="td-params">128</td>
+        <td class="td-role">Channel normalisation</td>
+      </tr>
+      <tr>
+        <td>ReLU</td>
+        <td class="td-out">64 × 64 × 64</td>
+        <td class="td-params">0</td>
+        <td class="td-role">Non-linearity</td>
+      </tr>
+      <tr>
+        <td>MaxPool2d(2)</td>
+        <td class="td-out">64 × 32 × 32</td>
+        <td class="td-params">0</td>
+        <td class="td-role">Spatial ÷2</td>
+      </tr>
+      <tr>
+        <td>Dropout2d(0.2)</td>
+        <td class="td-out">64 × 32 × 32</td>
+        <td class="td-params">0</td>
+        <td class="td-role">Drop 20% channels</td>
+      </tr>
+      <tr>
+        <td class="td-block" rowspan="5">Block 3</td>
+        <td>Conv2d(64→128, k=3, p=1)</td>
+        <td class="td-out">128 × 32 × 32</td>
+        <td class="td-params">73,856</td>
+        <td class="td-role">High-level digit structure</td>
+      </tr>
+      <tr>
+        <td>BatchNorm2d(128)</td>
+        <td class="td-out">128 × 32 × 32</td>
+        <td class="td-params">256</td>
+        <td class="td-role">Channel normalisation</td>
+      </tr>
+      <tr>
+        <td>ReLU</td>
+        <td class="td-out">128 × 32 × 32</td>
+        <td class="td-params">0</td>
+        <td class="td-role">Non-linearity</td>
+      </tr>
+      <tr>
+        <td>MaxPool2d(2)</td>
+        <td class="td-out">128 × 16 × 16</td>
+        <td class="td-params">0</td>
+        <td class="td-role">Spatial ÷2 → final 16×16</td>
+      </tr>
+      <tr>
+        <td>Dropout2d(0.3)</td>
+        <td class="td-out">128 × 16 × 16</td>
+        <td class="td-params">0</td>
+        <td class="td-role">Drop 30% channels</td>
+      </tr>
+      <tr>
+        <td class="td-block" rowspan="5">Classifier</td>
+        <td>Flatten</td>
+        <td class="td-out">32,768</td>
+        <td class="td-params">0</td>
+        <td class="td-role">128×16×16 → 1D vector</td>
+      </tr>
+      <tr>
+        <td>Dropout(0.4)</td>
+        <td class="td-out">32,768</td>
+        <td class="td-params">0</td>
+        <td class="td-role">Drop 40% neurons</td>
+      </tr>
+      <tr>
+        <td>Linear(32768→256)</td>
+        <td class="td-out">256</td>
+        <td class="td-params">8,388,864</td>
+        <td class="td-role">Compress to feature summary</td>
+      </tr>
+      <tr>
+        <td>Dropout(0.3)</td>
+        <td class="td-out">256</td>
+        <td class="td-params">0</td>
+        <td class="td-role">Drop 30% neurons</td>
+      </tr>
+      <tr>
+        <td>Linear(256→10)</td>
+        <td class="td-out" style="color:var(--output)">10 logits</td>
+        <td class="td-params">2,570</td>
+        <td class="td-role">One score per Khmer digit</td>
+      </tr>
+      <tr>
+        <td colspan="3" style="color:var(--muted);font-size:0.6rem;padding:10px 16px">TOTAL TRAINABLE PARAMETERS</td>
+        <td class="td-params" style="font-size:0.72rem;color:var(--input)">8,484,554</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+</body>
+</html>
